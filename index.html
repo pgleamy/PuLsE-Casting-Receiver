@@ -3,7 +3,7 @@
 <head>
   <title>PuLsE Visualization Receiver</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js" onerror="document.getElementById('message').textContent = 'Failed to load Cast Receiver SDK'; console.error('Failed to load Cast Receiver SDK')"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>

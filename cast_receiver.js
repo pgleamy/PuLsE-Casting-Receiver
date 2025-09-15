@@ -18,14 +18,22 @@ player.setPlaybackConfig(playbackConfig);
 player.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   request => {
-    console.log('PuLsE Receiver: Intercepting LOAD', request);
-    if (request.media.customData && request.media.customData.app === 'PuLsE') {
-      videoElement.src = request.media.contentId;
-      messageElement.textContent = '';
-      return request;
-    } else {
-      console.error('PuLsE Receiver: Invalid stream source');
-      messageElement.textContent = 'Error: Stream not from PuLsE Music Visualizer';
+    console.log('PuLsE Receiver: Intercepting LOAD request', request);
+    try {
+      if (request.media.customData && request.media.customData.app === 'PuLsE') {
+        videoElement.src = request.media.contentId;
+        messageElement.textContent = '';
+        console.log('PuLsE Receiver: Valid PuLsE stream loaded');
+        return request;
+      } else {
+        console.error('PuLsE Receiver: Invalid stream source');
+        messageElement.textContent = 'Error: Stream not from PuLsE Music Visualizer';
+        context.stop();
+        return null;
+      }
+    } catch (error) {
+      console.error('PuLsE Receiver: Error processing LOAD request', error);
+      messageElement.textContent = 'Error: Failed to process stream';
       context.stop();
       return null;
     }
@@ -35,18 +43,23 @@ player.setMessageInterceptor(
 // Handle resolution queries
 context.addCustomMessageListener(PULSE_NAMESPACE, event => {
   console.log('PuLsE Receiver: Custom message received', event);
-  if (event.data.type === 'GET_RESOLUTION') {
-    const logicalWidth = window.screen.width;
-    const logicalHeight = window.screen.height;
-    const pixelRatio = window.devicePixelRatio || 1;
-    const response = {
-      type: 'RESOLUTION_RESPONSE',
-      width: Math.round(logicalWidth * pixelRatio),
-      height: Math.round(logicalHeight * pixelRatio),
-      aspectRatio: (logicalWidth * pixelRatio) / (logicalHeight * pixelRatio)
-    };
-    context.sendCustomMessage(PULSE_NAMESPACE, null, response);
-    console.log('PuLsE Receiver: Sent resolution', response);
+  try {
+    if (event.data.type === 'GET_RESOLUTION') {
+      const logicalWidth = window.screen.width;
+      const logicalHeight = window.screen.height;
+      const pixelRatio = window.devicePixelRatio || 1;
+      const response = {
+        type: 'RESOLUTION_RESPONSE',
+        width: Math.round(logicalWidth * pixelRatio),
+        height: Math.round(logicalHeight * pixelRatio),
+        aspectRatio: (logicalWidth * pixelRatio) / (logicalHeight * pixelRatio)
+      };
+      context.sendCustomMessage(PULSE_NAMESPACE, null, response);
+      console.log('PuLsE Receiver: Sent resolution', response);
+    }
+  } catch (error) {
+    console.error('PuLsE Receiver: Error handling custom message', error);
+    messageElement.textContent = 'Error: Failed to process resolution query';
   }
 });
 
@@ -61,5 +74,10 @@ player.addEventListener(
 );
 
 // Start the receiver
-context.start({ playbackConfig });
-console.log('PuLsE Receiver: Started');
+try {
+  context.start({ playbackConfig });
+  console.log('PuLsE Receiver: Started successfully');
+} catch (error) {
+  console.error('PuLsE Receiver: Failed to start', error);
+  messageElement.textContent = 'Error: Receiver failed to start';
+}
